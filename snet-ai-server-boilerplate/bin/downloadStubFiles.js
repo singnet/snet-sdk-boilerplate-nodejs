@@ -1,10 +1,9 @@
-require("dotenv").config({path:__dirname+'/../.env'});
+require("dotenv").config({ path: __dirname + "/../.env" });
 const path = require("path");
 const fs = require("fs");
 var s3 = require("s3-client");
 var rimraf = require("rimraf");
 const globby = require("globby");
-
 
 var client = s3.createClient({
   maxAsyncS3: 20, // this is the default
@@ -26,7 +25,7 @@ var params = {
   },
 };
 
-exports.default = async function (orgId = "6ce80f485dae487688c3a083688819bb", serviceId = "test_freecall") {
+exports.default = async function (orgId, serviceId) {
   orgIdPath = orgId.replace(/-/g, "_");
   serviceIdPath = serviceId.replace(/-/g, "_");
   var downloader = client.downloadDir(params);
@@ -51,7 +50,9 @@ exports.default = async function (orgId = "6ce80f485dae487688c3a083688819bb", se
       return reject(err.message);
     });
     downloader.on("progress", function () {
-      const progressPercent = (Number(downloader.progressAmount) / Number(downloader.progressTotal)) * 100;
+      const progressPercent =
+        (Number(downloader.progressAmount) / Number(downloader.progressTotal)) *
+        100;
       if (!isNaN(progressPercent) && progressPercent - prevProgress > 0.5) {
         console.log("progress", progressPercent.toFixed(2), "%");
         prevProgress = progressPercent;
@@ -60,9 +61,14 @@ exports.default = async function (orgId = "6ce80f485dae487688c3a083688819bb", se
     downloader.on("end", async function () {
       let root = path.resolve(`./grpc_stubs`);
 
-      let paths = await globby([`${root}`, `!${root}/${orgIdPath}/${serviceIdPath}`]);
+      let paths = await globby([
+        `${root}`,
+        `!${root}/${orgIdPath}/${serviceIdPath}`,
+      ]);
 
-      let pathsToDelete = [...new Set(paths.map((el) => path.resolve(`${el}/..`)))];
+      let pathsToDelete = [
+        ...new Set(paths.map((el) => path.resolve(`${el}/..`))),
+      ];
 
       for (let index = 0; index < pathsToDelete.length; index++) {
         const pathToDelete = pathsToDelete[index];
