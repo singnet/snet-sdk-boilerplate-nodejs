@@ -10,7 +10,7 @@ plugins:
   - serverless-offline
 
 functions:
-  generateNodeStubs:
+  generateNodejsBoilerplateCode:
     handler: handlers/boilerplatecode.create
     role: ${file(./config.${self:provider.stage}.json):ROLE}
     vpc:
