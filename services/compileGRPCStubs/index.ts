@@ -1,8 +1,10 @@
 import axios from "axios";
-import { generateBoilerplateCode } from "./template/init";
+import { createEntryFile } from "./nodejs/createEntryFile";
+import { createPackageJson } from "./nodejs/createPackageJson";
 const fs = require("fs");
 const path = require("path");
 const Zip = require("adm-zip");
+const archiver = require("archiver");
 
 const STUBS = "grpc_stubs";
 
@@ -46,6 +48,15 @@ const downloadProtoZipFile = async (
   }
 };
 
+const packAIServicetoZip = async (servicePath: string) => {
+  console.log(servicePath);
+  const archive = archiver("zip", {
+    zlib: { level: 9 },
+  });
+
+  await archive.directory(`${servicePath}/`, true);
+};
+
 const unzipProtoFile = async (
   file: string,
   unzipFilePath: string
@@ -62,7 +73,9 @@ export const download = async (orgId: string, serviceId: string) => {
     const servicePath = await setServiceStoragePath(orgId, serviceId);
     const zippedProtofile = await downloadProtoZipFile(protoUrl, servicePath);
     await unzipProtoFile(zippedProtofile, servicePath);
-    await generateBoilerplateCode(orgId, serviceId);
+    createPackageJson(servicePath, serviceId);
+    createEntryFile(orgId, serviceId, servicePath);
+    await packAIServicetoZip(servicePath);
   } catch (error) {
     console.log(error);
     throw error;

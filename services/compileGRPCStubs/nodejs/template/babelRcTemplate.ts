@@ -1,4 +1,4 @@
-exports.default = `{
+export const babelRcTemplate = `{
     "presets": [
       [
         "@babel/preset-env",

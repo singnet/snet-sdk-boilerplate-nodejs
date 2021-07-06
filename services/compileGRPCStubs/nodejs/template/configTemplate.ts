@@ -1,4 +1,4 @@
-exports.default = `/**
+export const configTemplate = `/**
  * dotenv must be on the top of the entry file of the project
  */
  require("dotenv").config();
@@ -11,4 +11,4 @@ exports.default = `/**
    defaultGasPrice: process.env.DEFAULT_GAS_PRICE,
    defaultGasLimit: process.env.DEFAULT_GAS_LIMIT,
  };
- `
+ `;

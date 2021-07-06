@@ -1,4 +1,4 @@
-exports.default = `
+export const indexFileTemplate = `
 import aiService from "./aiService";
 
 const main = async () => {
@@ -10,4 +10,4 @@ const main = async () => {
 };
 
 main();
-`
+`;

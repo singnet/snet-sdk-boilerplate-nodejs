@@ -1,6 +1,6 @@
 const path = require("path");
 
-exports.default = function (orgId, serviceId) {
+export const aiServiceTemplate = (orgId: string, serviceId: string) => {
   const orgIdPath = orgId.replace(/-/g, "_");
   const serviceIdPath = serviceId.replace(/-/g, "_");
 
@@ -16,8 +16,8 @@ exports.default = function (orgId, serviceId) {
   /**
    * 1: Update the import paths for service and message grpc stubs
    */
-  import service from "./grpc_stubs/${orgIdPath}/${serviceIdPath}/${serviceIdPath}_grpc_pb";
-  import messages from "./grpc_stubs/${orgIdPath}/${serviceIdPath}/${serviceIdPath}_pb";
+  import service from "./grpc_stubs/${serviceIdPath}_grpc_pb"; 
+  import messages from "./grpc_stubs/${serviceIdPath}_pb";
   import config from "./config";
   
   dotenv.config();

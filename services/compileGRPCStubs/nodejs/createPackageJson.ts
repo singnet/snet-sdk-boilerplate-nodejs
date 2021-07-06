@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const os = require("os");
 
-const packageJson = {
+let packageJson = {
   version: "0.1.0",
   private: true,
   main: "index.js",
@@ -27,9 +27,10 @@ const packageJson = {
     nodemon: "^2.0.7",
     web3: "1.3.1",
   },
+  name: "",
 };
 export const createPackageJson = (directory: string, appName: string) => {
-  // packageJson.name = appName;
+  packageJson.name = appName;
   fs.writeFileSync(
     path.join(directory, "package.json"),
     JSON.stringify(packageJson, null, 2) + os.EOL

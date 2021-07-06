@@ -1,4 +1,4 @@
-exports.default = function (serviceId) {
+export const serverTemplate = (serviceId: string) => {
   const serviceIdPath = serviceId.replace(/-/g, "").toLowerCase();
   return `
 import express from "express";
