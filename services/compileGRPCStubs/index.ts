@@ -1,10 +1,12 @@
 import axios from "axios";
+import { syncFileWithS3 } from "../../utils/AWSS3Client";
 import { createEntryFile } from "./nodejs/createEntryFile";
 import { createPackageJson } from "./nodejs/createPackageJson";
 const fs = require("fs");
 const path = require("path");
 const Zip = require("adm-zip");
 const archiver = require("archiver");
+const rimraf = require("rimraf");
 
 const STUBS = "grpc_stubs";
 
@@ -48,13 +50,26 @@ const downloadProtoZipFile = async (
   }
 };
 
-const packAIServicetoZip = async (servicePath: string) => {
-  console.log(servicePath);
+const getZipFileName = (): string => {
+  return "nodejs-boilerplate.zip";
+};
+
+const packAIServicetoZip = async (servicePath: string): Promise<void> => {
+  const zipFileName = getZipFileName();
+  const stream = fs.createWriteStream(`${servicePath}/../${zipFileName}`);
   const archive = archiver("zip", {
     zlib: { level: 9 },
   });
 
-  await archive.directory(`${servicePath}/`, true);
+  return new Promise<void>((resolve, reject) => {
+    archive
+      .directory(servicePath, false)
+      .on("error", (err) => reject(err))
+      .pipe(stream);
+
+    stream.on("close", () => resolve());
+    archive.finalize();
+  });
 };
 
 const unzipProtoFile = async (
@@ -67,7 +82,27 @@ const unzipProtoFile = async (
   await fs.promises.unlink(file);
 };
 
-export const download = async (orgId: string, serviceId: string) => {
+const deleteAIServiceFiles = async (servicePath: string): Promise<void> => {
+  await rimraf.sync(servicePath);
+};
+
+const s3Folder = (
+  orgId: string,
+  serviceId: string,
+  fileName: string
+): string => {
+  return `assets/${orgId}/${serviceId}/stubs/${fileName}`;
+};
+
+const zippedServiceFilePath = (orgId: string, fileName: string): string => {
+  const directory = path.resolve(__dirname, "../../", "tmp", orgId);
+  return `${directory}/${fileName}`;
+};
+
+export const generateNodejsBoilerplatecode = async (
+  orgId: string,
+  serviceId: string
+) => {
   try {
     const protoUrl = await fetchProtoLink(orgId, serviceId);
     const servicePath = await setServiceStoragePath(orgId, serviceId);
@@ -76,6 +111,11 @@ export const download = async (orgId: string, serviceId: string) => {
     createPackageJson(servicePath, serviceId);
     createEntryFile(orgId, serviceId, servicePath);
     await packAIServicetoZip(servicePath);
+    await deleteAIServiceFiles(servicePath);
+    const aiZippedServiceName = getZipFileName();
+    const s3FolderName = s3Folder(orgId, serviceId, aiZippedServiceName);
+    const fileName = zippedServiceFilePath(orgId, aiZippedServiceName);
+    await syncFileWithS3(fileName, s3FolderName);
   } catch (error) {
     console.log(error);
     throw error;
