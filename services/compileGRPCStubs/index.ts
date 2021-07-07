@@ -2,31 +2,50 @@ import axios from "axios";
 import { syncFileWithS3 } from "../../utils/AWSS3Client";
 import { createEntryFile } from "./nodejs/createEntryFile";
 import { createPackageJson } from "./nodejs/createPackageJson";
+import * as os from "os";
+import { API } from "../../config/api";
 const fs = require("fs");
-const path = require("path");
 const Zip = require("adm-zip");
 const archiver = require("archiver");
 const rimraf = require("rimraf");
 
 const STUBS = "grpc_stubs";
 
+const tmp = os.tmpdir();
+
+enum STUB_TYPE {
+  NODEJS = "grpc-stub/nodejs",
+}
+
 const fetchProtoLink = async (
   orgId: string,
   serviceId: string
 ): Promise<string> => {
-  // TODO: API integration for fetching proto file
+  try {
+    const endpoint = `${API}/org/${orgId}/service/${serviceId}`;
+    const response = await axios.get(endpoint);
 
-  const downloadLink =
-    "https://ropsten-service-components.s3.amazonaws.com/assets/rajeev_june_25_org/calculator_june_25/stubs/nodejs.zip";
+    const { media } = response.data.data;
 
-  return downloadLink;
+    const nodejsStub = media.filter(
+      (file: { asset_type: STUB_TYPE }) => file.asset_type === STUB_TYPE.NODEJS
+    )[0];
+
+    if (nodejsStub) {
+      return nodejsStub.url;
+    } else {
+      throw `Stubs not found for service ${serviceId} on org ${orgId}`;
+    }
+  } catch (e) {
+    throw e;
+  }
 };
 
 const setServiceStoragePath = async (
   orgId: string,
   serviceId: string
 ): Promise<string> => {
-  const directory = path.resolve(__dirname, "../../", "tmp", orgId, serviceId);
+  const directory = `${tmp}/${orgId}/${serviceId}`;
 
   if (!fs.existsSync(directory)) {
     await fs.promises.mkdir(directory, { recursive: true });
@@ -95,7 +114,7 @@ const s3Folder = (
 };
 
 const zippedServiceFilePath = (orgId: string, fileName: string): string => {
-  const directory = path.resolve(__dirname, "../../", "tmp", orgId);
+  const directory = `${tmp}/${orgId}`;
   return `${directory}/${fileName}`;
 };
 
