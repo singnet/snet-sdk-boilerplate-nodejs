@@ -1,11 +1,12 @@
-import { Handler, Context } from "aws-lambda";
+import { Handler } from "aws-lambda";
 import { generateNodejsBoilerplatecode } from "../services/compileGRPCStubs";
+import { response } from "../utils/LambdaRequestResponse";
 
-export const create: Handler = async (
-  event: { serviceId: string; orgId: string },
-  context: Context
-): Promise<any> => {
+export const create: Handler = async (event: {
+  serviceId: string;
+  orgId: string;
+}): Promise<object> => {
   const { orgId, serviceId } = event;
   await generateNodejsBoilerplatecode(orgId, serviceId);
-  return context.succeed({ status: true, message: "ok" });
+  return response("OK", 200);
 };
