@@ -5,9 +5,9 @@ import { response, Response } from "../utils/LambdaRequestResponse";
 export const create: Handler = async (event: {
   serviceId: string;
   orgId: string;
-  stub_url: string;
+  stubUrl: string;
 }): Promise<Response> => {
-  const { orgId, serviceId, stub_url } = event;
-  await generateNodejsBoilerplatecode(orgId, serviceId, stub_url);
+  const { orgId, serviceId, stubUrl } = event;
+  await generateNodejsBoilerplatecode(orgId, serviceId, stubUrl);
   return response("OK", 200);
 };
