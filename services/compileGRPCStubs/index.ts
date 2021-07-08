@@ -1,10 +1,11 @@
 import axios from "axios";
 import { syncFileWithS3 } from "../../utils/AWSS3Client";
+import * as fs from "fs";
 import { createEntryFile } from "./nodejs/createEntryFile";
 import { createPackageJson } from "./nodejs/createPackageJson";
 import * as os from "os";
 import { API } from "../../config/api";
-const fs = require("fs");
+import { profile } from "console";
 const Zip = require("adm-zip");
 const archiver = require("archiver");
 const rimraf = require("rimraf");
@@ -118,6 +119,36 @@ const zippedServiceFilePath = (orgId: string, fileName: string): string => {
   return `${directory}/${fileName}`;
 };
 
+const findFile = (files: string[], pattern: string): string => {
+  for (const file of files) {
+    if (file.includes(pattern)) {
+      return file;
+    }
+  }
+  throw "File not found";
+};
+
+const findGRPCFile = (files: string[]): string => {
+  return findFile(files, "grpc_pb.js");
+};
+
+const findServiceFile = (files: string[]): string => {
+  return findFile(files, "service_pb.js");
+};
+
+const getGeneratedStubNames = (
+  servicePath: string
+): { grpcFile: string; protoFile: string } => {
+  const grpStubsPath = `${servicePath}/${STUBS}`;
+
+  const files = fs.readdirSync(grpStubsPath);
+
+  const grpcFile = findGRPCFile(files);
+  const protoFile = findServiceFile(files);
+
+  return { grpcFile, protoFile };
+};
+
 export const generateNodejsBoilerplatecode = async (
   orgId: string,
   serviceId: string,
@@ -127,8 +158,9 @@ export const generateNodejsBoilerplatecode = async (
     const servicePath = await setServiceStoragePath(orgId, serviceId);
     const zippedProtofile = await downloadProtoZipFile(protoUrl, servicePath);
     await unzipProtoFile(zippedProtofile, servicePath);
+    const { grpcFile, protoFile } = getGeneratedStubNames(servicePath);
     createPackageJson(servicePath, serviceId);
-    createEntryFile(orgId, serviceId, servicePath);
+    createEntryFile(orgId, serviceId, servicePath, grpcFile, protoFile);
     await packAIServicetoZip(servicePath);
     await deleteAIServiceFiles(servicePath);
     const aiZippedServiceName = getZipFileName();
