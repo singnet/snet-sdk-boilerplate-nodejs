@@ -119,31 +119,40 @@ const zippedServiceFilePath = (orgId: string, fileName: string): string => {
 };
 
 const findFile = (files: string[], pattern: string): string => {
-  for (const file of files) {
-    if (file.includes(pattern)) {
-      return file;
-    }
+  const fileName = files.find((file) => file.includes(pattern));
+
+  if (fileName) {
+    return fileName;
   }
   throw "File not found";
 };
 
 const findGRPCFile = (files: string[]): string => {
-  return findFile(files, "grpc_pb.js");
+  return findFile(files, `_grpc_pb.js`);
 };
 
-const findServiceFile = (files: string[]): string => {
-  return findFile(files, "service_pb.js");
+const findServiceFile = (files: string[], omitFile: string): string => {
+  const fileName = files.find((file) =>
+    file.replace(omitFile, "").includes("pb.js")
+  );
+
+  if (fileName) {
+    return fileName;
+  }
+
+  throw "Service file could not find";
 };
 
-const getGeneratedStubNames = (
+const getGeneratedStubNames = async (
   servicePath: string
-): { grpcFile: string; protoFile: string } => {
-  const grpStubsPath = `${servicePath}/${STUBS}`;
+): Promise<{ grpcFile: string; protoFile: string }> => {
+  const grpcStubsPath = `${servicePath}/${STUBS}`;
 
-  const files = fs.readdirSync(grpStubsPath);
+  const files = fs.readdirSync(grpcStubsPath);
 
   const grpcFile = findGRPCFile(files);
-  const protoFile = findServiceFile(files);
+
+  const protoFile = findServiceFile(files, grpcFile);
 
   return { grpcFile, protoFile };
 };
@@ -157,7 +166,7 @@ export const generateNodejsBoilerplatecode = async (
     const servicePath = await setServiceStoragePath(orgId, serviceId);
     const zippedProtofile = await downloadProtoZipFile(protoUrl, servicePath);
     await unzipProtoFile(zippedProtofile, servicePath);
-    const { grpcFile, protoFile } = getGeneratedStubNames(servicePath);
+    const { grpcFile, protoFile } = await getGeneratedStubNames(servicePath);
     createPackageJson(servicePath, serviceId);
     createEntryFile(orgId, serviceId, servicePath, grpcFile, protoFile);
     await packAIServicetoZip(servicePath);
