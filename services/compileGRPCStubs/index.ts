@@ -121,10 +121,9 @@ const zippedServiceFilePath = (orgId: string, fileName: string): string => {
 export const generateNodejsBoilerplatecode = async (
   orgId: string,
   serviceId: string,
-  proto_url: string
+  protoUrl: string
 ) => {
   try {
-    const protoUrl = proto_url;
     const servicePath = await setServiceStoragePath(orgId, serviceId);
     const zippedProtofile = await downloadProtoZipFile(protoUrl, servicePath);
     await unzipProtoFile(zippedProtofile, servicePath);
