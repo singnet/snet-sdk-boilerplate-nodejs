@@ -5,7 +5,6 @@ import { createEntryFile } from "./nodejs/createEntryFile";
 import { createPackageJson } from "./nodejs/createPackageJson";
 import * as os from "os";
 import { API } from "../../config/api";
-import { profile } from "console";
 const Zip = require("adm-zip");
 const archiver = require("archiver");
 const rimraf = require("rimraf");
