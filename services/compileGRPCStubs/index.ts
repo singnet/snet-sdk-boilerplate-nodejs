@@ -112,6 +112,13 @@ const unzipProtoFile = async (
 
   const stubFiles = fs.readdirSync(stubsFolder);
 
+  fs.readdirSync(filePath).forEach((dirent) => {
+    const fullPath = `${filePath}/${dirent}`;
+    if (fs.lstatSync(fullPath).isDirectory() && dirent !== STUBS_FOLDER) {
+      rimraf.sync(fullPath);
+    }
+  });
+
   stubFiles.forEach(async (file: string) => {
     await moveFile(`${stubsFolder}/${file}`, `${filePath}/${file}`);
   });
@@ -196,6 +203,7 @@ export const generateNodejsBoilerplatecode = async (
     const s3FolderName = s3Folder(orgId, serviceId, aiZippedServiceName);
     const fileName = zippedServiceFilePath(orgId, aiZippedServiceName);
     await syncFileWithS3(fileName, s3FolderName);
+    rimraf.sync(servicePath);
   } catch (error) {
     console.log(error);
     throw error;
