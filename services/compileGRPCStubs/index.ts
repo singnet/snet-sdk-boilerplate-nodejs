@@ -4,14 +4,17 @@ import * as fs from "fs";
 import { createEntryFile } from "./nodejs/createEntryFile";
 import { createPackageJson } from "./nodejs/createPackageJson";
 import * as os from "os";
+
 import { API } from "../../config/api";
 const Zip = require("adm-zip");
 const archiver = require("archiver");
 const rimraf = require("rimraf");
+const moveFile = require("move-file");
 
 const STUBS = "grpc_stubs";
 const GRPC_SUFFIX = "_grpc_pb.js";
 const SERVICE_SUFFIX = "_pb.js";
+const STUBS_FOLDER = "stubs";
 
 const tmp = os.tmpdir();
 
@@ -101,7 +104,18 @@ const unzipProtoFile = async (
 ): Promise<void> => {
   const override = true;
   const zip = new Zip(file);
-  zip.extractAllTo(`${unzipFilePath}/${STUBS}`, override);
+
+  const filePath = `${unzipFilePath}/${STUBS}`;
+  const stubsFolder = `${filePath}/${STUBS_FOLDER}`;
+
+  zip.extractAllTo(filePath, override);
+
+  const stubFiles = fs.readdirSync(stubsFolder);
+
+  stubFiles.forEach(async (file: string) => {
+    await moveFile(`${stubsFolder}/${file}`, `${filePath}/${file}`);
+  });
+
   await fs.promises.unlink(file);
 };
 
@@ -128,7 +142,7 @@ const getGeneratedStubNames = (
 ): { grpcFile: string; serviceFile: string } => {
   const grpcStubsPath = `${servicePath}/${STUBS}`;
 
-  let files = fs.readdirSync(grpcStubsPath);
+  const files = fs.readdirSync(grpcStubsPath);
 
   const stubFiles = files.filter((file) => file.includes(SERVICE_SUFFIX));
 
