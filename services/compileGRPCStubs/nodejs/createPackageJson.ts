@@ -2,6 +2,8 @@ const path = require("path");
 const fs = require("fs");
 const os = require("os");
 
+const SNETSdkVersion = "^2.0.0-beta.0";
+
 let packageJson = {
   version: "0.1.0",
   private: true,
@@ -13,7 +15,7 @@ let packageJson = {
   },
   dependencies: {
     dotenv: "^8.2.0",
-    "snet-sdk": "^1.0.0-beta.7",
+    "snet-sdk": SNETSdkVersion,
   },
   devDependencies: {
     "@babel/cli": "^7.13.10",

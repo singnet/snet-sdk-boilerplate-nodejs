@@ -1,15 +1,17 @@
 import axios from "axios";
 import { syncFileWithS3 } from "../../utils/AWSS3Client";
+import * as fs from "fs";
 import { createEntryFile } from "./nodejs/createEntryFile";
 import { createPackageJson } from "./nodejs/createPackageJson";
 import * as os from "os";
 import { API } from "../../config/api";
-const fs = require("fs");
 const Zip = require("adm-zip");
 const archiver = require("archiver");
 const rimraf = require("rimraf");
 
 const STUBS = "grpc_stubs";
+const GRPC_SUFFIX = "_grpc_pb.js";
+const SERVICE_SUFFIX = "_pb.js";
 
 const tmp = os.tmpdir();
 
@@ -34,7 +36,9 @@ const fetchProtoLink = async (
     if (nodejsStub) {
       return nodejsStub.url;
     } else {
-      throw `Stubs not found for service ${serviceId} on org ${orgId}`;
+      throw new Error(
+        `Stubs not found for service ${serviceId} on org ${orgId}`
+      );
     }
   } catch (e) {
     throw e;
@@ -118,6 +122,45 @@ const zippedServiceFilePath = (orgId: string, fileName: string): string => {
   return `${directory}/${fileName}`;
 };
 
+const getGeneratedStubNames = (
+  servicePath: string,
+  serviceName: string
+): { grpcFile: string; serviceFile: string } => {
+  const grpcStubsPath = `${servicePath}/${STUBS}`;
+
+  let files = fs.readdirSync(grpcStubsPath);
+
+  const stubFiles = files.filter((file) => file.includes(SERVICE_SUFFIX));
+
+  const serviceFiles = stubFiles.filter((file) => !file.includes(GRPC_SUFFIX));
+  const grpcFiles = stubFiles.filter((file) => file.includes(GRPC_SUFFIX));
+
+  let grpcFile: string;
+  let serviceFile: string;
+
+  if (serviceFiles.length < 1) {
+    throw new Error("Service files could not find");
+  }
+
+  if (grpcFiles.length < 1) {
+    throw new Error("GRPC files could not find");
+  }
+
+  if (serviceFiles.length > 1) {
+    serviceFile = `${serviceName}${SERVICE_SUFFIX}`;
+  } else {
+    serviceFile = serviceFiles[0];
+  }
+
+  if (grpcFiles.length > 1) {
+    grpcFile = `${serviceName}${GRPC_SUFFIX}`;
+  } else {
+    grpcFile = grpcFiles[0];
+  }
+
+  return { grpcFile, serviceFile };
+};
+
 export const generateNodejsBoilerplatecode = async (
   orgId: string,
   serviceId: string,
@@ -127,8 +170,12 @@ export const generateNodejsBoilerplatecode = async (
     const servicePath = await setServiceStoragePath(orgId, serviceId);
     const zippedProtofile = await downloadProtoZipFile(protoUrl, servicePath);
     await unzipProtoFile(zippedProtofile, servicePath);
+    const { grpcFile, serviceFile } = getGeneratedStubNames(
+      servicePath,
+      serviceId
+    );
     createPackageJson(servicePath, serviceId);
-    createEntryFile(orgId, serviceId, servicePath);
+    createEntryFile(orgId, serviceId, servicePath, grpcFile, serviceFile);
     await packAIServicetoZip(servicePath);
     await deleteAIServiceFiles(servicePath);
     const aiZippedServiceName = getZipFileName();

@@ -12,13 +12,20 @@ import { serverTemplate } from "./template/serverTemplate";
 export const createEntryFile = (
   orgId: string,
   serviceId: string,
-  directory: string
+  directory: string,
+  grpcFile: string,
+  protoFile: string
 ) => {
   try {
     const root = directory;
     fs.writeFileSync(path.join(root, "index.js"), indexFileTemplate + os.EOL);
 
-    const serviceFile = aiServiceTemplate(orgId, serviceId);
+    const serviceFile = aiServiceTemplate(
+      orgId,
+      serviceId,
+      grpcFile,
+      protoFile
+    );
     fs.writeFileSync(path.join(root, "aiService.js"), serviceFile + os.EOL);
 
     fs.writeFileSync(path.join(root, "config.js"), configTemplate + os.EOL);
