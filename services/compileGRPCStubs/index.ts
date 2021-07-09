@@ -10,6 +10,8 @@ const archiver = require("archiver");
 const rimraf = require("rimraf");
 
 const STUBS = "grpc_stubs";
+const GRPC_SUFFIX = "_grpc_pb.js";
+const SERVICE_SUFFIX = "_pb.js";
 
 const tmp = os.tmpdir();
 
@@ -34,7 +36,9 @@ const fetchProtoLink = async (
     if (nodejsStub) {
       return nodejsStub.url;
     } else {
-      throw `Stubs not found for service ${serviceId} on org ${orgId}`;
+      throw new Error(
+        `Stubs not found for service ${serviceId} on org ${orgId}`
+      );
     }
   } catch (e) {
     throw e;
@@ -118,43 +122,43 @@ const zippedServiceFilePath = (orgId: string, fileName: string): string => {
   return `${directory}/${fileName}`;
 };
 
-const findFile = (files: string[], pattern: string): string => {
-  const fileName = files.find((file) => file.includes(pattern));
-
-  if (fileName) {
-    return fileName;
-  }
-  throw "File not found";
-};
-
-const findGRPCFile = (files: string[]): string => {
-  return findFile(files, `_grpc_pb.js`);
-};
-
-const findServiceFile = (files: string[], omitFile: string): string => {
-  const fileName = files.find((file) =>
-    file.replace(omitFile, "").includes("pb.js")
-  );
-
-  if (fileName) {
-    return fileName;
-  }
-
-  throw "Service file could not find";
-};
-
-const getGeneratedStubNames = async (
-  servicePath: string
-): Promise<{ grpcFile: string; protoFile: string }> => {
+const getGeneratedStubNames = (
+  servicePath: string,
+  serviceName: string
+): { grpcFile: string; serviceFile: string } => {
   const grpcStubsPath = `${servicePath}/${STUBS}`;
 
-  const files = fs.readdirSync(grpcStubsPath);
+  let files = fs.readdirSync(grpcStubsPath);
 
-  const grpcFile = findGRPCFile(files);
+  const stubFiles = files.filter((file) => file.includes(SERVICE_SUFFIX));
 
-  const protoFile = findServiceFile(files, grpcFile);
+  const serviceFiles = stubFiles.filter((file) => !file.includes(GRPC_SUFFIX));
+  const grpcFiles = stubFiles.filter((file) => file.includes(GRPC_SUFFIX));
 
-  return { grpcFile, protoFile };
+  let grpcFile: string;
+  let serviceFile: string;
+
+  if (serviceFiles.length < 1) {
+    throw new Error("Service files could not find");
+  }
+
+  if (grpcFiles.length < 1) {
+    throw new Error("GRPC files could not find");
+  }
+
+  if (serviceFiles.length > 1) {
+    serviceFile = `${serviceName}${SERVICE_SUFFIX}`;
+  } else {
+    serviceFile = serviceFiles[0];
+  }
+
+  if (grpcFiles.length > 1) {
+    grpcFile = `${serviceName}${GRPC_SUFFIX}`;
+  } else {
+    grpcFile = grpcFiles[0];
+  }
+
+  return { grpcFile, serviceFile };
 };
 
 export const generateNodejsBoilerplatecode = async (
@@ -166,9 +170,12 @@ export const generateNodejsBoilerplatecode = async (
     const servicePath = await setServiceStoragePath(orgId, serviceId);
     const zippedProtofile = await downloadProtoZipFile(protoUrl, servicePath);
     await unzipProtoFile(zippedProtofile, servicePath);
-    const { grpcFile, protoFile } = await getGeneratedStubNames(servicePath);
+    const { grpcFile, serviceFile } = getGeneratedStubNames(
+      servicePath,
+      serviceId
+    );
     createPackageJson(servicePath, serviceId);
-    createEntryFile(orgId, serviceId, servicePath, grpcFile, protoFile);
+    createEntryFile(orgId, serviceId, servicePath, grpcFile, serviceFile);
     await packAIServicetoZip(servicePath);
     await deleteAIServiceFiles(servicePath);
     const aiZippedServiceName = getZipFileName();
