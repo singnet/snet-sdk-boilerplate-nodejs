@@ -9,7 +9,6 @@ import { API } from "../../config/api";
 const Zip = require("adm-zip");
 const archiver = require("archiver");
 const rimraf = require("rimraf");
-const moveFile = require("move-file");
 
 const STUBS = "grpc_stubs";
 const GRPC_SUFFIX = "_grpc_pb.js";
@@ -119,8 +118,11 @@ const unzipProtoFile = async (
     }
   });
 
-  stubFiles.forEach(async (file: string) => {
-    await moveFile(`${stubsFolder}/${file}`, `${filePath}/${file}`);
+  stubFiles.forEach(async (stubFile: string) => {
+    await fs.promises.rename(
+      `${stubsFolder}/${stubFile}`,
+      `${filePath}/${stubFile}`
+    );
   });
 
   await fs.promises.unlink(file);
