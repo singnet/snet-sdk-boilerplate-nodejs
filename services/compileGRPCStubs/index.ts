@@ -125,7 +125,7 @@ const unzipProtoFile = async (
     );
   });
 
-  await fs.promises.unlink(stubsFolder);
+  await rimraf.sync(stubsFolder);
   await fs.promises.unlink(file);
 };
 
