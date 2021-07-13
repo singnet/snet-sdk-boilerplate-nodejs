@@ -125,6 +125,7 @@ const unzipProtoFile = async (
     );
   });
 
+  await fs.promises.unlink(stubsFolder);
   await fs.promises.unlink(file);
 };
 
