@@ -6,7 +6,7 @@ Install the dependencies and devDependencies and start the service locally by ru
 
 ```sh
 npm install -g serverless # Install serverless
-npm install --save-dev
+npm install
 ```
 
 ### Start the service locally
