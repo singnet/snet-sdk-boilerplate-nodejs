@@ -15,8 +15,8 @@ npm install
 npm run local
 ```
 
-## Requirements
+## Minimum Requirements
 
 | Language     | Download               |
 | ------------ | ---------------------- |
-| Node JS 14.X | https://nodejs.org/en/ |
+| Node JS 12.X | https://nodejs.org/en/ |
