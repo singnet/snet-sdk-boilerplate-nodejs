@@ -13,7 +13,7 @@ const rimraf = require("rimraf");
 const STUBS = "grpc_stubs";
 const GRPC_SUFFIX = "_grpc_pb.js";
 const SERVICE_SUFFIX = "_pb.js";
-const STUBS_FOLDER = "stubs";
+const STUBS_FOLDER_SUFFIX = "-grpc-stubs";
 
 const tmp = os.tmpdir();
 
@@ -99,10 +99,13 @@ const packAIServicetoZip = async (servicePath: string): Promise<void> => {
 
 const unzipProtoFile = async (
   file: string,
-  unzipFilePath: string
+  unzipFilePath: string,
+  serviceId: string
 ): Promise<void> => {
   const override = true;
   const zip = new Zip(file);
+
+  const STUBS_FOLDER = `${serviceId}${STUBS_FOLDER_SUFFIX}`;
 
   const filePath = `${unzipFilePath}/${STUBS}`;
   const stubsFolder = `${filePath}/${STUBS_FOLDER}`;
@@ -193,7 +196,7 @@ export const generateNodejsBoilerplatecode = async (
   try {
     const servicePath = await setServiceStoragePath(orgId, serviceId);
     const zippedProtofile = await downloadProtoZipFile(protoUrl, servicePath);
-    await unzipProtoFile(zippedProtofile, servicePath);
+    await unzipProtoFile(zippedProtofile, servicePath, serviceId);
     const { grpcFile, serviceFile } = getGeneratedStubNames(
       servicePath,
       serviceId
