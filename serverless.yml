@@ -6,6 +6,13 @@ provider:
   lambdaHashingVersion: 20201221
   region: ${file(./config.${self:provider.stage}.json):REGION}
   stage: ${opt:stage,'dev'}
+  deploymentBucket:
+    name: snet-serverless-artifacts
+    serverSideEncryption: AES256
+    tags:
+      key1: nodejsboilerplate
+    deploymentPrefix: serverless
+    tracing: true
 
 plugins:
   - serverless-plugin-typescript
