@@ -10,7 +10,7 @@ provider:
     name: snet-serverless-artifacts
     serverSideEncryption: AES256
     tags:
-      key1: nodestubs
+      key1: nodejsboilerplate
     deploymentPrefix: serverless
     tracing: true
 
